@@ -41,35 +41,39 @@ from search import Graph
 
 def bfs(graph, start, goal):
     queue = []
+    extended_list = []
     queue.append([start])
+    extended_list.append(start)
     while not (queue[0][-1]==goal) and queue:
         head_node = queue[0]
         connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
-            if not x in head_node:
+            if not x in extended_list:
                 tmp_list = [i for i in head_node]
                 tmp_list.append(x)
                 queue.append(tmp_list)
+        extended_list.append(queue[0][-1])
     return queue[0]
-
-
 
 
 ## Once you have completed the breadth-first search,
 ## this part should be very simple to complete.
 def dfs(graph, start, goal):
     queue = []
+    extended_list = []
     queue.append([start])
+    extended_list.append(start)
     while not (queue[0][-1]==goal) and queue:
         head_node = queue[0]
         connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
-            if not x in head_node:
+            if not x in extended_list:
                 tmp_list = [i for i in head_node]
                 tmp_list.append(x)
                 queue.insert(0,tmp_list)
+        extended_list.append(queue[0][-1])
     return queue[0]
 
 
@@ -80,7 +84,9 @@ def dfs(graph, start, goal):
 ## Search direction should be towards lower heuristic values to the goal.
 def hill_climbing(graph, start, goal):
     queue = []
+    extended_list = []
     queue.append([start])
+    extended_list.append(start)
     while not (queue[0][-1]==goal) and queue:
         heurist_list=[]
         head_node = queue[0]
@@ -91,9 +97,11 @@ def hill_climbing(graph, start, goal):
                 heurist_list.append(x)
         heurist_list.sort(reverse = True, key=lambda a : graph.get_heuristic(a,goal))
         for x in heurist_list:
-            tmp_list = [i for i in head_node]
-            tmp_list.append(x)
-            queue.insert(0,tmp_list)
+            if not x in extended_list:
+                tmp_list = [i for i in head_node]
+                tmp_list.append(x)
+                queue.insert(0,tmp_list)
+        extended_list.append(queue[0][-1])
     return queue[0]
 
 ## Now we're going to implement beam search, a variation on BFS
@@ -103,14 +111,16 @@ def hill_climbing(graph, start, goal):
 ## graph get_heuristic function, with lower values being better values.
 def beam_search(graph, start, goal, beam_width):
     queue = []
+    extended_list = []
     queue.append([start])
+    extended_list.append(start)
     while not (queue[0][-1]==goal) and queue:
         heurist_list=[]
         head_node = queue[0]
         connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
-            if not x in head_node:
+            if not x in extended_list:
                 tmp_list = [i for i in head_node]
                 tmp_list.append(x)
                 queue.append(tmp_list)
@@ -120,6 +130,7 @@ def beam_search(graph, start, goal, beam_width):
                 del queue[beam_width:]
         except:
             return []
+        extended_list.append(queue[0][-1])
     return queue[0]
 
 ## Now we're going to try optimal search.  The previous searches haven't
@@ -139,17 +150,20 @@ def path_length(graph, node_names):
 
 def branch_and_bound(graph, start, goal):
     queue = []
+    extended_list = []
     queue.append([start])
+    extended_list.append(start)
     while not (queue[0][-1]==goal) and queue:
         head_node = queue[0]
         connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
-            if not x in head_node:
+            if not x in extended_list:
                 tmp_list = [i for i in head_node]
                 tmp_list.append(x)
                 queue.insert(0,tmp_list)
                 queue.sort(reverse = False, key=lambda a : path_length(graph,a))
+        extended_list.append(queue[0][-1])
     return queue[0]
 
 def a_star(graph, start, goal):
@@ -167,6 +181,6 @@ def is_admissible(graph, goal):
 def is_consistent(graph, goal):
     raise NotImplementedError
 
-HOW_MANY_HOURS_THIS_PSET_TOOK = ''
-WHAT_I_FOUND_INTERESTING = ''
-WHAT_I_FOUND_BORING = ''
+HOW_MANY_HOURS_THIS_PSET_TOOK = '50'
+WHAT_I_FOUND_INTERESTING = 'all'
+WHAT_I_FOUND_BORING = 'none'
