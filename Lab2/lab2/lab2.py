@@ -44,7 +44,7 @@ def bfs(graph, start, goal):
     queue.append([start])
     while not (queue[0][-1]==goal) and queue:
         head_node = queue[0]
-        connected_nodes = graph.get_connected_nodes(queue[0][-1])
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
             if not x in head_node:
@@ -63,7 +63,7 @@ def dfs(graph, start, goal):
     queue.append([start])
     while not (queue[0][-1]==goal) and queue:
         head_node = queue[0]
-        connected_nodes = graph.get_connected_nodes(queue[0][-1])
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
             if not x in head_node:
@@ -84,7 +84,7 @@ def hill_climbing(graph, start, goal):
     while not (queue[0][-1]==goal) and queue:
         heurist_list=[]
         head_node = queue[0]
-        connected_nodes = graph.get_connected_nodes(queue[0][-1])
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
         queue.pop(0)
         for x in connected_nodes:
             if not x in head_node:
@@ -102,7 +102,25 @@ def hill_climbing(graph, start, goal):
 ## The k top candidates are to be determined using the 
 ## graph get_heuristic function, with lower values being better values.
 def beam_search(graph, start, goal, beam_width):
-    raise NotImplementedError
+    queue = []
+    queue.append([start])
+    while not (queue[0][-1]==goal) and queue:
+        heurist_list=[]
+        head_node = queue[0]
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
+        queue.pop(0)
+        for x in connected_nodes:
+            if not x in head_node:
+                tmp_list = [i for i in head_node]
+                tmp_list.append(x)
+                queue.append(tmp_list)
+        try: 
+            if(len(queue[0])==len(queue[-1])):
+                queue.sort(reverse = False, key=lambda a : graph.get_heuristic(a[-1],goal))
+                del queue[beam_width:]
+        except:
+            return []
+    return queue[0]
 
 ## Now we're going to try optimal search.  The previous searches haven't
 ## used edge distances in the calculation.
