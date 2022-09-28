@@ -148,7 +148,58 @@ def path_length(graph, node_names):
     return sum_length
 
 
+"""
+### WITHOUT EXTENDED LIST - NUMBER OF OPERATIONS IS EXPONENTIALLY LARGE
 def branch_and_bound(graph, start, goal):
+    queue = []
+    oper_queue = 0
+    oper_enqueue = 0
+    extended_list = []
+    queue.append([start])
+    oper_queue = oper_queue + 1
+    extended_list.append(start)
+    while not (queue[0][-1]==goal) and queue:
+        head_node = queue[0]
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
+        oper_enqueue = oper_enqueue + 1
+        queue.pop(0)
+        for x in connected_nodes:
+            if not x in head_node:
+                tmp_list = [i for i in head_node]
+                tmp_list.append(x)
+                queue.insert(0,tmp_list)
+                oper_queue = oper_queue + 1
+                queue.sort(reverse = False, key=lambda a : path_length(graph,a))
+        extended_list.append(queue[0][-1])
+    print("Numbber of queueue operations: ", oper_queue)
+    print("Numbber of enqueueue operations: ", oper_enqueue)
+    return queue[0]
+"""
+
+def branch_and_bound(graph, start, goal):
+    queue = []
+    oper_queue = 0
+    oper_enqueue = 0
+    extended_list = []
+    queue.append([start])
+    oper_queue = oper_queue + 1
+    extended_list.append(start)
+    while not (queue[0][-1]==goal) and queue:
+        head_node = queue[0]
+        connected_nodes = graph.get_connected_nodes(head_node[-1])
+        oper_enqueue = oper_enqueue + 1
+        queue.pop(0)
+        for x in connected_nodes:
+            if not x in extended_list:
+                tmp_list = [i for i in head_node]
+                tmp_list.append(x)
+                queue.insert(0,tmp_list)
+                oper_queue = oper_queue + 1
+                queue.sort(reverse = False, key=lambda a : path_length(graph,a))
+        extended_list.append(queue[0][-1])
+    return queue[0]
+
+def a_star(graph, start, goal):
     queue = []
     extended_list = []
     queue.append([start])
@@ -162,13 +213,10 @@ def branch_and_bound(graph, start, goal):
                 tmp_list = [i for i in head_node]
                 tmp_list.append(x)
                 queue.insert(0,tmp_list)
-                queue.sort(reverse = False, key=lambda a : path_length(graph,a))
+                ## add admissible heuristic 
+                queue.sort(reverse = False, key=lambda a : path_length(graph,a)+graph.get_heuristic(a[-1],goal))
         extended_list.append(queue[0][-1])
     return queue[0]
-
-def a_star(graph, start, goal):
-    raise NotImplementedError
-
 
 ## It's useful to determine if a graph has a consistent and admissible
 ## heuristic.  You've seen graphs with heuristics that are
@@ -176,10 +224,21 @@ def a_star(graph, start, goal):
 ## consistent, but not admissible?
 
 def is_admissible(graph, goal):
-    raise NotImplementedError
+    for x in graph.nodes:
+        D = path_length(graph, a_star(graph,x,goal))
+        H = graph.get_heuristic(x,goal)
+        if D<H: return False
+    return True
 
 def is_consistent(graph, goal):
-    raise NotImplementedError
+    for x in graph.nodes:
+        for y in graph.nodes:
+            if x!=y:
+                D = path_length(graph, a_star(graph,y,x))
+                H1 = graph.get_heuristic(x,goal)
+                H2 = graph.get_heuristic(y,goal)
+                if D<abs(H1-H2): return False
+    return True
 
 HOW_MANY_HOURS_THIS_PSET_TOOK = '50'
 WHAT_I_FOUND_INTERESTING = 'all'
