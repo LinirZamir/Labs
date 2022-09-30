@@ -85,7 +85,7 @@ quick_to_win_player = lambda board: minimax(board, depth=4,
                                             eval_fn=focused_evaluate)
 
 ## You can try out your new evaluation function by uncommenting this line:
-run_game(basic_player, quick_to_win_player)
+#run_game(basic_player, quick_to_win_player)
 
 ## Write an alpha-beta-search procedure that acts like the minimax-search
 ## procedure, but uses alpha-beta pruning to avoid searching bad ideas
@@ -102,7 +102,43 @@ def alpha_beta_search(board, depth,
                       # for connect_four.
                       get_next_moves_fn=get_all_next_moves,
 		      is_terminal_fn=is_terminal):
-    raise NotImplementedError
+    alpha_beta = [NEG_INFINITY, INFINITY]
+    best_val = None
+
+    for move, new_board in get_next_moves_fn(board):
+        new_val = ab_find_board_value(new_board, depth-1, alpha_beta, eval_fn,
+                                            get_next_moves_fn,
+                                            is_terminal_fn)
+        if best_val == None or new_val > best_val[0]:
+            best_val = (new_val, move, new_board)
+                    
+    ##print "ALPHA-BETA: Decided on column %d with rating %d" % (best_val[1], best_val[0])
+
+    return best_val[1]
+
+def ab_find_board_value(board, depth, ab_val, eval_fn,
+                             get_next_moves_fn=get_all_next_moves,
+                             is_terminal_fn=is_terminal):
+    """
+    Minimax helper function: Return the minimax value of a particular board,
+    given a particular depth to estimate to
+    """
+    if is_terminal_fn(depth, board):
+        return eval_fn(board)
+
+    new_alphbeta = [-1* ab_val[1],-1* ab_val[0]]
+    print("First Iter AlphaBeta: ", ab_val)
+    for move, new_board in get_next_moves_fn(board):
+        if ab_val[0] >= ab_val[1]:
+            break
+        new_val = ab_find_board_value(new_board, depth-1, new_alphbeta, eval_fn,
+                                                get_next_moves_fn, is_terminal_fn)
+        if new_val > ab_val[0]:
+            ab_val[0] = new_val                                    
+
+
+    return ab_val[0]
+
 
 ## Now you should be able to search twice as deep in the same amount of time.
 ## (Of course, this alpha-beta-player won't work until you've defined
@@ -110,6 +146,11 @@ def alpha_beta_search(board, depth,
 alphabeta_player = lambda board: alpha_beta_search(board,
                                                    depth=8,
                                                    eval_fn=focused_evaluate)
+
+
+## You can try out your new evaluation function by uncommenting this line:
+## run_game(basic_player, alphabeta_player)
+
 
 ## This player uses progressive deepening, so it can kick your ass while
 ## making efficient use of time:
