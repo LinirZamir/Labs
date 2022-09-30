@@ -14,7 +14,7 @@ from util import INFINITY
 #      1. MM will play better than AB.
 #      2. AB will play better than MM.
 #      3. They will play with the same level of skill.
-ANSWER1 = 0
+ANSWER1 = 3
 
 # 1.2. Two computerized players are playing a game with a time limit. Player MM
 # does minimax search with iterative deepening, and player AB does alpha-beta
@@ -24,7 +24,7 @@ ANSWER1 = 0
 #   1. MM will play better than AB.
 #   2. AB will play better than MM.
 #   3. They will play with the same level of skill.
-ANSWER2 = 0
+ANSWER2 = 2
 
 ### 2. Connect Four
 from connectfour import *
@@ -38,7 +38,7 @@ import tree_searcher
 ## grader-bot to play a game!
 ## 
 ## Uncomment this line to play a game as white:
-#run_game(human_player, basic_player)
+## run_game(human_player, basic_player)
 
 ## Uncomment this line to play a game as black:
 #run_game(basic_player, human_player)
@@ -56,16 +56,36 @@ def focused_evaluate(board):
     that board is for the current player.
     A return value >= 1000 means that the current player has won;
     a return value <= -1000 means that the current player has lost
-    """    
-    raise NotImplementedError
+    """
+    if board.is_game_over():
+        score = -1000
+    else:
+        ## Starting focused eval
+        for move, next_board in get_all_next_moves(board):
+            if next_board.longest_chain(next_board.get_other_player_id()) == 4:
+                score = 1000
+                break
+            elif next_board.longest_chain(next_board.get_current_player_id()) == 4: 
+                score = -1000
+                break
 
+        score = board.longest_chain(board.get_current_player_id()) * 10
+        # Prefer having your pieces in the center of the board.          
+        for row in range(6):
+            for col in range(7):
+                if board.get_cell(row, col) == board.get_current_player_id():
+                    score -= abs(3-col)
+                elif board.get_cell(row, col) == board.get_other_player_id():
+                    score += abs(3-col)
+
+    return score
 
 ## Create a "player" function that uses the focused_evaluate function
 quick_to_win_player = lambda board: minimax(board, depth=4,
                                             eval_fn=focused_evaluate)
 
 ## You can try out your new evaluation function by uncommenting this line:
-#run_game(basic_player, quick_to_win_player)
+run_game(basic_player, quick_to_win_player)
 
 ## Write an alpha-beta-search procedure that acts like the minimax-search
 ## procedure, but uses alpha-beta pruning to avoid searching bad ideas
