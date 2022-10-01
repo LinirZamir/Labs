@@ -118,7 +118,7 @@ def alpha_beta_search(board, depth,
             alpha_beta[0] = new_val  
             best_val = (new_val, move, new_board)
                     
-    print "ALPHA-BETA: Decided on column %d with rating %d" % (best_val[1], best_val[0])
+    ## print "ALPHA-BETA: Decided on column %d with rating %d" % (best_val[1], best_val[0])
 
     return best_val[1]
 
@@ -156,7 +156,7 @@ alphabeta_player = lambda board: alpha_beta_search(board,
 
 
 ## You can try out your new evaluation function by uncommenting this line:
-run_game(basic_player, alphabeta_player)
+#run_game(quick_to_win_player, alphabeta_player)
 
 
 ## This player uses progressive deepening, so it can kick your ass while
@@ -165,7 +165,7 @@ ab_iterative_player = lambda board: \
     run_search_function(board,
                         search_fn=alpha_beta_search,
                         eval_fn=focused_evaluate, timeout=5)
-#run_game(human_player, alphabeta_player)
+## run_game(human_player, ab_iterative_player)
 
 ## Finally, come up with a better evaluation function than focused-evaluate.
 ## By providing a different function, you should be able to beat
@@ -173,17 +173,71 @@ ab_iterative_player = lambda board: \
 ## same depth.
 
 def better_evaluate(board):
-    raise NotImplementedError
+    """
+    Given a board, return a numeric rating of how good
+    that board is for the current player.
+    A return value >= 1000 means that the current player has won;
+    a return value <= -1000 means that the current player has lost
+    """
+    score = 0
+    if board.is_game_over():
+        score = -1000
+    else:
+        ## Starting focused eval
+        for move, next_board in get_all_next_moves(board):
+            if next_board.longest_chain(next_board.get_other_player_id()) == 4:
+                score = 1000
+                break
+            elif next_board.longest_chain(next_board.get_current_player_id()) == 4: 
+                score = -1000
+                break
+
+        """
+        ##my_next_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
+        my_next_big_chains = list(board.chain_cells(board.get_current_player_id()))
+        for x in my_next_big_chains: 
+            score+=pow(len(x),2)
+
+        
+        #their_next_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
+        their_next_big_chains = list(board.chain_cells(board.get_other_player_id()))
+        for y in their_next_big_chains: 
+            score-=pow(len(y),2)
+
+        """
+        
+        for move, next_board in get_all_next_moves(board):
+            
+            my_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_current_player_id()))
+            my_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
+            my_new=list(set(my_next_big_chains)-set(my_current_big_chains))
+            for x in my_new: 
+                score+=pow(len(x),3)
+            their_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_other_player_id()))
+            their_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
+            their_new=list(set(their_next_big_chains)-set(their_current_big_chains))
+            for x in their_new: 
+                score-=pow(len(x),3)
+        for row in range(6):
+            for col in range(7):
+                if board.get_cell(row, col) == board.get_current_player_id():
+                    score -= abs(3-col)
+                elif board.get_cell(row, col) == board.get_other_player_id():
+                    score += abs(3-col)
+
+
+
+    return score
 
 # Comment this line after you've fully implemented better_evaluate
-better_evaluate = memoize(basic_evaluate)
+# better_evaluate = memoize(basic_evaluate)
 
 # Uncomment this line to make your better_evaluate run faster.
-# better_evaluate = memoize(better_evaluate)
+#better_evaluate = memoize(better_evaluate)
 
 # For debugging: Change this if-guard to True, to unit-test
 # your better_evaluate function.
-if False:
+if True:
     board_tuples = (( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
@@ -200,17 +254,63 @@ if False:
     # better evaluate from player 2
     print "%s => %s" %(test_board_2, better_evaluate(test_board_2))
 
+
+
+
+"""
+This evaluator is from another online student. 
+MY EVALUATOR WAS SUPERIOR! 
+
+def other_evaluate(board):
+    score = 0
+    
+    if board.longest_chain(board.get_current_player_id()) == 4:
+        score = 2000 - board.num_tokens_on_board()
+        
+    elif board.longest_chain(board.get_other_player_id()) == 4:
+        score = -2000 + board.num_tokens_on_board()
+        
+    else:
+        cur_play = board.get_current_player_id()
+        other_play = board.get_other_player_id()
+        for row in range(2,6):
+            for col in range(2,5):
+                score += max([get_chain_len(i, board, row, col, cur_play) for i in range(3)])**2
+                score -= max([get_chain_len(i, board, row, col, other_play) for i in range(3)])**2
+                
+    return score
+
+def get_chain_len(chain_type, board, row, col, player):
+    count = 0
+    for i in xrange(3):
+        
+        if chain_type == 0 and board.get_cell(row, col+i) == player:
+            count += 1
+            
+        elif chain_type == 1 and board.get_cell(row-i, col) == player:
+            count += 1
+            
+        elif chain_type == 2 and board.get_cell(row-i, col+i) == player:
+            count += 1
+            
+    return count
+
+"""
+
+
+
 ## A player that uses alpha-beta and better_evaluate:
 your_player = lambda board: run_search_function(board,
                                                 search_fn=alpha_beta_search,
                                                 eval_fn=better_evaluate,
                                                 timeout=5)
+## his_player = lambda board: run_search_function(board,search_fn=alpha_beta_search,eval_fn=other_evaluate,timeout=5)
 
 #your_player = lambda board: alpha_beta_search(board, depth=4,
 #                                              eval_fn=better_evaluate)
 
 ## Uncomment to watch your player play a game:
-#run_game(your_player, your_player)
+## run_game(your_player, your_player)
 
 ## Uncomment this (or run it in the command window) to see how you do
 ## on the tournament that will be graded.
