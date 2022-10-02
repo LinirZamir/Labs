@@ -2,6 +2,7 @@
 # Name: <Your Name>
 # Email: <Your Email>
 
+from pyexpat import XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE
 from util import INFINITY
 
 ### 1. Multiple choice
@@ -180,10 +181,59 @@ def better_evaluate(board):
     a return value <= -1000 means that the current player has lost
     """
     score = 0
+    trap_count = 0
     if board.is_game_over():
         score = -1000
     else:
-        ## Starting focused eval
+        for move, next_board in get_all_next_moves(board):
+            if next_board.longest_chain(next_board.get_other_player_id()) == 4:
+                score = 2000
+                break
+            elif next_board.longest_chain(next_board.get_current_player_id()) == 4: 
+                score = -2000
+                break
+        ## prioritizing mid columns
+        for row in range(6):
+            for col in range(7):
+                if board.get_cell(row, col) == board.get_current_player_id():
+                    score -= abs(3-col)
+                elif board.get_cell(row, col) == board.get_other_player_id():
+                    score += abs(3-col)
+                if check_figure_seven(board,row,col,board.get_current_player_id()):
+                    score+=pow(4,2)
+                elif check_figure_seven(board,row,col,board.get_other_player_id()):
+                    score-=pow(4,2)
+                if check_trap(board,row,col,board.get_current_player_id()):
+                    score+=pow(4,2)
+                elif check_trap(board,row,col,board.get_other_player_id()):
+                    score-=pow(4,2)
+        ## prioritizing getting longer chains + blocking adversary short chains
+        my_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
+        ##my_next_big_chains = list(board.chain_cells(board.get_current_player_id()))
+        for x in my_big_chains: 
+            score+=pow(len(x),2)        
+        their_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
+        ##their_next_big_chains = list(board.chain_cells(board.get_other_player_id()))
+        for y in their_big_chains: 
+            score-=pow(len(y),2)
+    return score
+
+"""
+        if len(x)==2:
+                for move, next_board in get_all_next_moves(board):
+                    my_next_big_chains = filter(lambda x: len(x)==3, next_board.chain_cells(board.get_current_player_id()))
+                    if (all(x in my_next_big_chains for x in my_big_chains)):
+                        trap_count+=1
+                    else:
+                        score+=pow(len(x),1.5)
+                if(trap_count>1):
+                    score+=pow(len(x),2) 
+                    trap_count=0
+                else:
+                    score+=pow(len(x),1.5)
+            else:
+                score+=pow(len(x),1.5)        
+  
         for move, next_board in get_all_next_moves(board):
             if next_board.longest_chain(next_board.get_other_player_id()) == 4:
                 score = 1000
@@ -191,43 +241,83 @@ def better_evaluate(board):
             elif next_board.longest_chain(next_board.get_current_player_id()) == 4: 
                 score = -1000
                 break
+            else:
+                my_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_current_player_id()))
+                my_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
+                my_new=list(set(my_next_big_chains)-set(my_current_big_chains))
+                for x in my_new: 
+                    score+=pow(len(x),3)
+                their_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_other_player_id()))
+                their_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
+                their_new=list(set(their_next_big_chains)-set(their_current_big_chains))
+                for x in their_new: 
+                    score-=pow(len(x),3)
+            for row in range(6):
+                for col in range(7):
+                    if board.get_cell(row, col) == board.get_current_player_id():
+                        score -= abs(3-col)
+                    elif board.get_cell(row, col) == board.get_other_player_id():
+                        score += abs(3-col)
 
-        """
-        ##my_next_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
-        my_next_big_chains = list(board.chain_cells(board.get_current_player_id()))
-        for x in my_next_big_chains: 
-            score+=pow(len(x),2)
-
+"""
+def check_figure_seven(board,row,col,player):
+    try:
+        if (col!=6 and \
+            board.get_cell(row,col) == player and \
+            board.get_cell(row-1,col+1) == player and \
+            board.get_cell(row-2,col+2) == player and \
+            board.get_cell(row-2,col+1) == player and \
+            board.get_cell(row-2,col) == player) or \
+            (col!=0 and \
+            board.get_cell(row,col) == player and \
+            board.get_cell(row-1,col-1) == player and \
+            board.get_cell(row-2,col-2) == player and \
+            board.get_cell(row-2,col-1) == player and \
+            board.get_cell(row-2,col) == player):
+                return True
+    except IndexError:
+        return False
+    return False
         
-        #their_next_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
-        their_next_big_chains = list(board.chain_cells(board.get_other_player_id()))
-        for y in their_next_big_chains: 
-            score-=pow(len(y),2)
+def check_trap(board,row,col,player):
+    ##Horizon 1
+    try:
+        if ((row<5 and \
+        board.get_cell(row,col) == 0 and \
+        board.get_cell(row,col+1) == player and \
+        board.get_cell(row,col+2) == player and \
+        board.get_cell(row,col+3) == player and \
+        board.get_cell(row,col+4) == 0 and\
+        board.get_cell(row+1,col) != 0 and\
+        board.get_cell(row+1,col+4) != 0)  or \
+    ##Horizon 2
+        (row==5 and \
+        board.get_cell(row,col) == 0 and \
+        board.get_cell(row,col+1) == player and \
+        board.get_cell(row,col+2) == player and \
+        board.get_cell(row,col+3) == player and \
+        board.get_cell(row,col+4) == 0)  or\
+    ## Diagonal 1
+        (board.get_cell(row,col) == 0 and \
+        board.get_cell(row-1,col+1) == player and \
+        board.get_cell(row-2,col+2) == player and \
+        board.get_cell(row-3,col+3) == player and \
+        board.get_cell(row-4,col+4) == 0 and\
+        board.get_cell(row+1,col) != 0 and\
+        board.get_cell(row-3,col+4) != 0)  or \
+    ## Diagonal 2
+        (board.get_cell(row,col) == 0 and \
+        board.get_cell(row-1,col-1) == player and \
+        board.get_cell(row-2,col-2) == player and \
+        board.get_cell(row-3,col-3) == player and \
+        board.get_cell(row-4,col-4) == 0 and\
+        board.get_cell(row+1,col) != 0 and\
+        board.get_cell(row-3,col-4) != 0)):
+            return True
+    except IndexError:
+        return False
+    return False
 
-        """
-        
-        for move, next_board in get_all_next_moves(board):
-            
-            my_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_current_player_id()))
-            my_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_current_player_id()))
-            my_new=list(set(my_next_big_chains)-set(my_current_big_chains))
-            for x in my_new: 
-                score+=pow(len(x),3)
-            their_next_big_chains = filter(lambda x: len(x) > 1, next_board.chain_cells(board.get_other_player_id()))
-            their_current_big_chains = filter(lambda x: len(x) > 1, board.chain_cells(board.get_other_player_id()))
-            their_new=list(set(their_next_big_chains)-set(their_current_big_chains))
-            for x in their_new: 
-                score-=pow(len(x),3)
-        for row in range(6):
-            for col in range(7):
-                if board.get_cell(row, col) == board.get_current_player_id():
-                    score -= abs(3-col)
-                elif board.get_cell(row, col) == board.get_other_player_id():
-                    score += abs(3-col)
-
-
-
-    return score
 
 # Comment this line after you've fully implemented better_evaluate
 # better_evaluate = memoize(basic_evaluate)
@@ -241,9 +331,9 @@ if True:
     board_tuples = (( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
-                    ( 0,2,2,1,1,2,0 ),
-                    ( 0,2,1,2,1,2,0 ),
-                    ( 2,1,2,1,1,1,0 ),
+                    ( 0,0,0,0,0,0,0 ),
+                    ( 0,0,0,0,0,0,0 ),
+                    ( 0,1,1,1,0,2,0 ),
                     )
     test_board_1 = ConnectFourBoard(board_array = board_tuples,
                                     current_player = 1)
@@ -337,12 +427,12 @@ def run_test_tree_search(search, board, depth):
 ## Do you want us to use your code in a tournament against other students? See
 ## the description in the problem set. The tournament is completely optional
 ## and has no effect on your grade.
-COMPETE = (None)
+COMPETE = (True)
 
 ## The standard survey questions.
-HOW_MANY_HOURS_THIS_PSET_TOOK = ""
-WHAT_I_FOUND_INTERESTING = ""
-WHAT_I_FOUND_BORING = ""
-NAME = ""
-EMAIL = ""
+HOW_MANY_HOURS_THIS_PSET_TOOK = "Too long"
+WHAT_I_FOUND_INTERESTING = "Everything"
+WHAT_I_FOUND_BORING = "Nothing"
+NAME = "Ben"
+EMAIL = "asad"
 
