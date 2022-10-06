@@ -15,12 +15,20 @@ def forward_checking(state, verbose=False):
     if not basic:
         return False
 
-    # Add your forward checking logic here.
-    
-
-    
-    raise NotImplementedError
-
+    var = state.get_current_variable()
+    value = None
+    if var is not None:
+        value = var.get_assigned_value()
+        con_list = state.get_constraints_by_name(var.get_name())
+        for con in con_list:
+            Y = state.get_variable_by_name(con.get_variable_j_name())
+            for y in Y.get_domain():
+                if not con.check(state, value, y):
+                    Y.reduce_domain(y)
+                if Y.domain_size() == 0:
+                    return False
+    return True
+                
 # Now Implement forward checking + (constraint) propagation through
 # singleton domains.
 def forward_checking_prop_singleton(state, verbose=False):
@@ -29,8 +37,25 @@ def forward_checking_prop_singleton(state, verbose=False):
     if not fc_checker:
         return False
 
-    # Add your propagate singleton logic here.
-    raise NotImplementedError
+    singleton_queue = list()
+    visited_singleton = list()
+    for singleton_var in state.get_all_variables():
+        if singleton_var.domain_size() == 1:
+            singleton_queue.append(singleton_var)
+    while not (len(singleton_queue) == 0):
+        cur_single = singleton_queue.pop()
+        visited_singleton.append(cur_single)
+        x_val = cur_single.get_domain()[0]
+        for con in state.get_constraints_by_name(cur_single.get_name()):
+            Y = state.get_variable_by_name(con.get_variable_j_name())
+            for y_val in Y.get_domain():
+                if not con.check(state, x_val, y_val):
+                    Y.reduce_domain(y_val)
+                if Y.domain_size() == 0:
+                    return False
+            if (Y not in singleton_queue) and (Y not in visited_singleton) and Y.domain_size()==1:
+                singleton_queue.append(Y)
+    return True
 
 ## The code here are for the tester
 ## Do not change.
@@ -71,8 +96,11 @@ senate_group1, senate_group2 = crosscheck_groups(senate_people)
 ## computes Hamming distances.
 
 def euclidean_distance(list1, list2):
+    dist = 0
+    for i in range(len(list1)):
+        dist += pow(list1[i]-list2[i],2)
     # this is not the right solution!
-    return hamming_distance(list1, list2)
+    return pow(dist,0.5)
 
 #Once you have implemented euclidean_distance, you can check the results:
 #evaluate(nearest_neighbors(euclidean_distance, 1), senate_group1, senate_group2)
