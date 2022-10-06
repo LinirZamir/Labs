@@ -17,6 +17,8 @@ def forward_checking(state, verbose=False):
 
     # Add your forward checking logic here.
     
+
+    
     raise NotImplementedError
 
 # Now Implement forward checking + (constraint) propagation through
