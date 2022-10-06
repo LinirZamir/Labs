@@ -109,7 +109,7 @@ def euclidean_distance(list1, list2):
 ## deals better with independents. Make a classifier that makes at most 3
 ## errors on the Senate.
 
-my_classifier = nearest_neighbors(hamming_distance, 1)
+my_classifier = nearest_neighbors(euclidean_distance, 5)
 #evaluate(my_classifier, senate_group1, senate_group2, verbose=1)
 
 ### Part 2: ID Trees
@@ -119,8 +119,34 @@ my_classifier = nearest_neighbors(hamming_distance, 1)
 ## which should lead to simpler trees.
 
 def information_disorder(yes, no):
-    return homogeneous_disorder(yes, no)
+    count_yes = float(len(yes))
+    count_no = float(len(no))
+    total = count_yes + count_no
 
+    (yes_a,yes_b) = information_helper(yes)
+    (no_a,no_b) = information_helper(no)
+    if (yes_a/count_yes==0 or yes_b/count_yes==0):
+        disorder_yes = 0
+    else:
+        disorder_yes = -((yes_a/count_yes)*math.log((yes_a/count_yes),2))-((yes_b/count_yes)*math.log((yes_b/count_yes),2))
+    if (no_a/count_no==0 or no_b/count_no==0):
+        disorder_no = 0
+    else:
+        disorder_no = -((no_a/count_no)*math.log((no_a/count_no),2))-((no_b/count_no)*math.log((no_b/count_no),2))
+    
+    total_disorder = disorder_yes*(count_yes/total)+disorder_no*(count_no/total)
+    return total_disorder
+
+def information_helper(lst):
+    ## Check 'yes' list first
+    count_a = 1
+    count_b = 0
+    for item in lst[1:]:
+        if item==lst[0]: 
+            count_a+= 1
+        else: 
+            count_b+=1
+    return (float(count_a),float(count_b))
 #print CongressIDTree(senate_people, senate_votes, information_disorder)
 #evaluate(idtree_maker(senate_votes, homogeneous_disorder), senate_group1, senate_group2)
 
